@@ -18,7 +18,9 @@
  'use strict';
 
  //const functions = require('firebase-functions');
- const {smarthome} = require('actions-on-google');
+ const {smarthome, SmartHomeV1ExecuteResponseCommands} = require('actions-on-google');
+ 
+ //const { TuyaContext  } =  require('tuya');
  const {google} = require('googleapis');
  const util = require('util');
  const admin = require('firebase-admin');
@@ -42,6 +44,11 @@
  var eapp = express();
  eapp.use(express.json())
  eapp.use(express.urlencoded({extended: true}))
+
+
+ 
+
+
  
  // exports.login = functions.https.onRequest((request, response) => {
  //   if (request.method === 'GET') {
@@ -71,6 +78,10 @@
  //     response.send(405, 'Method Not Allowed');
  //   }
  // });
+ var user = {
+   username: null,
+   password: null
+ }
  
  eapp.all('/login*', function(request, response) {
    console.log('Intercepting requests ...',request.query);
@@ -86,6 +97,10 @@
          <form action="/login" method="post">
            <input type="hidden"
              name="responseurl" value="${request.query.responseurl}" />
+             <input  
+             name="username" value="user.username" />
+             <input  
+             name="pass" value="user.password" />
            <button type="submit" style="font-size:14pt">
              Link this service to Google
            </button>
@@ -94,8 +109,8 @@
      </html>
    `);
    } else if (request.method === 'POST') {
-     // Here, you should validate the user account.
-     // In this sample, we do not do that.
+    console.log('POST requests ...',request.query);
+    console.log('POST body ...',request.body);
      const responseurl = decodeURIComponent(request.body.responseurl);
      console.log(`Redirect to ${responseurl}`);
      return response.redirect(responseurl);
@@ -157,7 +172,8 @@
  //       .json(obj);
  // });
  
- 
+const fetch = require('node-fetch');
+
  eapp.all('/faketoken*', function(request, response) {
    console.log('Intercepting requests ...',request.query);
    console.log('Intercepting body ...',request.body);
@@ -168,66 +184,111 @@
    const secondsInDay = 86400; // 60 * 60 * 24
    const HTTP_STATUS_OK = 200;
    console.log(`Grant type ${grantType}`);
- 
+   
+  fetch("http://103.229.41.59/api/TokenAuth/Authenticate", {
+  "headers": {
+    "accept": "text/plain",
+    "accept-language": "vi",
+    "authorization": "null",
+    "content-type": "application/json-patch+json",
+   
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "body": "{\"userNameOrEmailAddress\":\"admin\",\"password\":\"123qwe\",\"rememberClient\":true}",
+  "method": "POST"
+  }) .then(res => res.text())
+  .then(text => {
+    console.log("Fetch =======================",text);
+    text = JSON.parse(text);
    let obj;
    if (grantType === 'authorization_code') {
      obj = {
        token_type: 'bearer',
-       access_token: '123access',
+       access_token: text.result.accessToken,
        refresh_token: '123refresh',
        expires_in: secondsInDay,
      };
    } else if (grantType === 'refresh_token') {
      obj = {
        token_type: 'bearer',
-       access_token: '123access',
+       access_token: text.result.accessToken,
        expires_in: secondsInDay,
      };
    }
    response.status(HTTP_STATUS_OK)
        .json(obj);
+  });
+   
+
  
  });
  
+ async function fect(body, req)
+ {
+  let a = {
+    requestId: body.requestId,
+    payload: {
+      agentUserId: USER_ID,
+      devices: [],
+    },
+   };
+ 
+   await fetch("https://imax.accesscam.org/api/services/app/UserSmartHome/GetAllDeviceActions", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "vi",
+    "authorization": req.authorization,
+    "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"99\", \"Microsoft Edge\";v=\"99\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "body": null,
+  "method": "GET"
+  })
+  .then(x => x.json())
+  .then(res => {
+    
+    console.log("Fetch Onsync =======================",res);
+    if(res.result.success && res.result.data !== null ) {
+      res.result.data.forEach(element => {
+        var dev = {
+          id: element.devId,
+          type: 'action.devices.types.LIGHT',
+          traits: [
+            'action.devices.traits.Brightness',
+            'action.devices.traits.OnOff',
+            'action.devices.traits.ColorSetting'
+          ],
+          name: {
+            defaultNames: [element.name],
+            name: element.name,
+            nicknames: [element.name]  
+          }  
+        };
+        a.payload.devices.push(dev);
+        console.log("Device deva =======================",dev, a);
+      });
+      }
+     });
+    console.log("Device Rest=======================",a, JSON.stringify(a));
+    return a;
+ }
  
  
  const app = smarthome();
  
- app.onSync((body) => {
-   return {
-     requestId: body.requestId,
-     payload: {
-       agentUserId: USER_ID,
-       devices: [{
-         id: 'washer',
-         type: 'action.devices.types.WASHER',
-         traits: [
-           'action.devices.traits.OnOff',
-           'action.devices.traits.StartStop',
-           'action.devices.traits.RunCycle',
-         ],
-         name: {
-           defaultNames: ['My Washer'],
-           name: 'Washer',
-           nicknames: ['Washer'],
-         }
-       }, {
-         id: 'light',
-         type: 'action.devices.types.LIGHT',
-         traits: [
-           'action.devices.traits.Brightness',
-           'action.devices.traits.OnOff',
-           'action.devices.traits.ColorSetting'
-         ],
-         name: {
-           defaultNames: [`Smart Lamp`],
-           name: 'Smart Lamp',
-           nicknames: ['abc']         
-         }     
-       }],
-     },
-   };
- });
+ app.onSync( async (body, req) =>   {
+  console.log('Onsync body==============================', body);
+  console.log('Onsync  reqs==============================', req);
+  var a = await fect(body, req);
+  console.log("return fect =======================",JSON.stringify(a));
+  return a;
+  });
  
  var storeState = { on: true,
    isPaused: false,
@@ -314,6 +375,7 @@
  app.onExecute(async (body) => {
    const {requestId} = body;
    // Execution results are grouped by status
+   //const commands: SmartHomeV1ExecuteResponseCommands[] = [];
    const result = {
      ids: [],
      status: 'SUCCESS',
