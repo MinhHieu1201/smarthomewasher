@@ -8,11 +8,17 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tuya/tuya-connector-nodejs": "^2.1.2",
     "actions-on-google": "^2.14.0",
+    "axios": "^0.26.1",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "firebase-admin": "^8.0.0",
     "firebase-functions": "^3.8.0",
-    "googleapis": "^43.0.0"
+    "googleapis": "^43.0.0",
+    "node-fetch": "2.0",
+    "qs": "^6.10.3",
+    "tuya": "^0.0.0-alpha.0"
   },
   "private": true,
   "devDependencies": {

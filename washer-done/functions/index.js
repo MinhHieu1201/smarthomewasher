@@ -22,8 +22,13 @@
  
  //const { TuyaContext  } =  require('tuya');
  const {google} = require('googleapis');
+ const crypto = require('crypto');
+ const axios = require('axios');
+ const qs = require('qs');
  const util = require('util');
  const admin = require('firebase-admin');
+ 
+const { TuyaContext  } = require('@tuya/tuya-connector-nodejs');
  // Initialize Firebase
  admin.initializeApp();
  //const firebaseRef = admin.database().ref('/');
@@ -46,42 +51,10 @@
  eapp.use(express.urlencoded({extended: true}))
 
 
- 
-
-
- 
- // exports.login = functions.https.onRequest((request, response) => {
- //   if (request.method === 'GET') {
- //     functions.logger.log('Requesting login page');
- //     response.send(`
- //     <html>
- //       <meta name="viewport" content="width=device-width, initial-scale=1">
- //       <body>
- //         <form action="/login" method="post">
- //           <input type="hidden"
- //             name="responseurl" value="${request.query.responseurl}" />
- //           <button type="submit" style="font-size:14pt">
- //             Link this service to Google
- //           </button>
- //         </form>
- //       </body>
- //     </html>
- //   `);
- //   } else if (request.method === 'POST') {
- //     // Here, you should validate the user account.
- //     // In this sample, we do not do that.
- //     const responseurl = decodeURIComponent(request.body.responseurl);
- //     functions.logger.log(`Redirect to ${responseurl}`);
- //     return response.redirect(responseurl);
- //   } else {
- //     // Unsupported method
- //     response.send(405, 'Method Not Allowed');
- //   }
- // });
- var user = {
-   username: null,
-   password: null
- }
+  var user = {
+    username: null,
+    password: null
+  }
  
  eapp.all('/login*', function(request, response) {
    console.log('Intercepting requests ...',request.query);
@@ -98,21 +71,24 @@
            <input type="hidden"
              name="responseurl" value="${request.query.responseurl}" />
              <input  
-             name="username" value="user.username" />
+             name="username"  value="${request.query.username}" />
              <input  
-             name="pass" value="user.password" />
+             name="password"  value="${request.query.password}" />
            <button type="submit" style="font-size:14pt">
              Link this service to Google
            </button>
          </form>
        </body>
      </html>
-   `);
+    `);
    } else if (request.method === 'POST') {
     console.log('POST requests ...',request.query);
     console.log('POST body ...',request.body);
+     user.username = request.body.username;
+     user.password = request.body.password;
      const responseurl = decodeURIComponent(request.body.responseurl);
      console.log(`Redirect to ${responseurl}`);
+     console.log('USER +++++++++++++++',user);
      return response.redirect(responseurl);
    } else {
      // Unsupported method
@@ -120,17 +96,6 @@
    }
  
  });
- 
- 
- 
- // exports.fakeauth = functions.https.onRequest((request, response) => {
- //   const responseurl = util.format('%s?code=%s&state=%s',
- //       decodeURIComponent(request.query.redirect_uri), 'xxxxxx',
- //       request.query.state);
- //   functions.logger.log(`Set redirect as ${responseurl}`);
- //   return response.redirect(
- //       `/login?responseurl=${encodeURIComponent(responseurl)}`);
- // });
  
  
  eapp.all('/fakeauth*', function(request, response) {
@@ -146,31 +111,7 @@
    `/login?responseurl=${encodeURIComponent(responseurl)}`);
  
  });
- // exports.faketoken = functions.https.onRequest((request, response) => {
- //   const grantType = request.query.grant_type ?
- //     request.query.grant_type : request.body.grant_type;
- //   const secondsInDay = 86400; // 60 * 60 * 24
- //   const HTTP_STATUS_OK = 200;
- //   functions.logger.log(`Grant type ${grantType}`);
- 
- //   let obj;
- //   if (grantType === 'authorization_code') {
- //     obj = {
- //       token_type: 'bearer',
- //       access_token: '123access',
- //       refresh_token: '123refresh',
- //       expires_in: secondsInDay,
- //     };
- //   } else if (grantType === 'refresh_token') {
- //     obj = {
- //       token_type: 'bearer',
- //       access_token: '123access',
- //       expires_in: secondsInDay,
- //     };
- //   }
- //   response.status(HTTP_STATUS_OK)
- //       .json(obj);
- // });
+
  
 const fetch = require('node-fetch');
 
@@ -184,6 +125,11 @@ const fetch = require('node-fetch');
    const secondsInDay = 86400; // 60 * 60 * 24
    const HTTP_STATUS_OK = 200;
    console.log(`Grant type ${grantType}`);
+   var loginbody = {
+    userNameOrEmailAddress : user.username,
+    password: user.password,
+    rememberClient: true
+   }
    
   fetch("http://103.229.41.59/api/TokenAuth/Authenticate", {
   "headers": {
@@ -194,7 +140,7 @@ const fetch = require('node-fetch');
    
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
-  "body": "{\"userNameOrEmailAddress\":\"admin\",\"password\":\"123qwe\",\"rememberClient\":true}",
+  "body": JSON.stringify(loginbody),
   "method": "POST"
   }) .then(res => res.text())
   .then(text => {
@@ -208,14 +154,14 @@ const fetch = require('node-fetch');
        refresh_token: '123refresh',
        expires_in: secondsInDay,
      };
-   } else if (grantType === 'refresh_token') {
+    } else if (grantType === 'refresh_token') {
      obj = {
        token_type: 'bearer',
        access_token: text.result.accessToken,
        expires_in: secondsInDay,
-     };
-   }
-   response.status(HTTP_STATUS_OK)
+      };
+    }
+    response.status(HTTP_STATUS_OK)
        .json(obj);
   });
    
@@ -290,7 +236,7 @@ const fetch = require('node-fetch');
   return a;
   });
  
- var storeState = { on: true,
+  var storeState = { on: true,
    isPaused: false,
    isRunning: false
  };
@@ -306,6 +252,7 @@ const fetch = require('node-fetch');
      isRunning: storeState.isRunning,
    };
  };
+
  const queryDevice = async (deviceId) => {
    const data = await queryFirebase(deviceId);
    return {
@@ -371,7 +318,102 @@ const fetch = require('node-fetch');
    //     .then(() => state);
    return state;
  };
+
  
+const tuya = new TuyaContext({
+  baseUrl: 'https://openapi.tuyaus.com',
+  accessKey: 'e4jy8n7vbgyaed6egzyz',
+  secretKey: '69e41276e66649d1b2a8a42df3e7ced3',
+});
+
+const device =  tuya.device.detail({
+  device_id: '4720106698f4abbc86b4'
+});
+
+let token = '';
+
+const httpClient = axios.create({
+  baseURL: 'https://openapi.tuyaus.com',
+  timeout: 5 * 1e3,
+});
+
+async function encryptStr(str, secret) {
+  return crypto.createHmac('sha256', secret).update(str, 'utf8').digest('hex').toUpperCase();
+}
+
+ async function getToken() {
+  const method = 'GET';
+  const timestamp = Date.now().toString();
+  const signUrl = '/v1.0/token?grant_type=1';
+  const contentHash = crypto.createHash('sha256').update('').digest('hex');
+  const stringToSign = [method, contentHash, '', signUrl].join('\n');
+  const signStr = 'e4jy8n7vbgyaed6egzyz' + timestamp + stringToSign;
+
+  const headers = {
+    t: timestamp,
+    sign_method: 'HMAC-SHA256',
+    client_id: 'e4jy8n7vbgyaed6egzyz',
+    sign: await encryptStr(signStr, '69e41276e66649d1b2a8a42df3e7ced3'),
+  };
+  var login = await httpClient.get('/v1.0/token?grant_type=1', { headers });
+  if (!login || !login.success) {
+    // throw Error(`fetch failed: ${login.msg}`);
+  }
+  console.log("Login Tuya =========================", login.data);
+  token = login.data.result.access_token;
+}
+
+async function getRequestSign(
+  path,
+  method,
+  headers = {},
+  query = {},
+  body = {},
+) {
+  const t = Date.now().toString();
+  const [uri, pathQuery] = path.split('?');
+  const queryMerged = Object.assign(query, qs.parse(pathQuery));
+  const sortedQuery = {};
+  Object.keys(queryMerged)
+    .sort()
+    .forEach((i) => (sortedQuery[i] = query[i]));
+
+  const querystring = decodeURIComponent(qs.stringify(sortedQuery));
+  const url = querystring ? `${uri}?${querystring}` : uri;
+  const contentHash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  const stringToSign = [method, contentHash, '', url].join('\n');
+  const signStr = 'e4jy8n7vbgyaed6egzyz' + token + t + stringToSign;
+  return {
+    t,
+    path: url,
+    client_id: 'e4jy8n7vbgyaed6egzyz',
+    sign: await encryptStr(signStr, '69e41276e66649d1b2a8a42df3e7ced3'),
+    sign_method: 'HMAC-SHA256',
+    access_token: token,
+  };
+}
+
+
+async function getDeviceInfo(deviceId) {
+  const query = {};
+  const method = 'GET';
+  const url = `/v1.1/iot-03/devices/${deviceId}`;
+  const reqHeaders = await getRequestSign(url, method, {}, query);
+  console.log("Header tuya =========================", reqHeaders);
+  const  data  = await httpClient.request({
+    method,
+    data: {},
+    params: {},
+    headers: reqHeaders,
+    url: reqHeaders.path,
+  });
+
+  console.log("Get device Tuya =========================", data.data);
+  
+}
+ 
+
+
  app.onExecute(async (body) => {
    const {requestId} = body;
    // Execution results are grouped by status
@@ -383,6 +425,14 @@ const fetch = require('node-fetch');
        online: true,
      },
    };
+
+   const xxx = await getToken();
+   var devices = await getDeviceInfo('6cd418b92db0844e00us78');
+ 
+/// console.log(JSON.stringify(xxx, null, 2));
+
+
+
  
    const executePromises = [];
    const intent = body.inputs[0];
@@ -415,24 +465,7 @@ const fetch = require('node-fetch');
    return {};
  });
  
- // exports.smarthome = functions.https.onRequest(app);
- 
- // exports.requestsync = functions.https.onRequest(async (request, response) => {
- //   response.set('Access-Control-Allow-Origin', '*');
- //   functions.logger.info(`Request SYNC for user ${USER_ID}`);
- //   try {
- //     const res = await homegraph.devices.requestSync({
- //       requestBody: {
- //         agentUserId: USER_ID,
- //       },
- //     });
- //     functions.logger.info('Request sync response:', res.status, res.data);
- //     response.json(res.data);
- //   } catch (err) {
- //     functions.logger.error(err);
- //     response.status(500).send(`Error requesting sync: ${err}`);
- //   }
- // });
+
  
  eapp.all('/requestsync*', async function(request, response) {
    response.set('Access-Control-Allow-Origin', '*');
@@ -470,14 +503,7 @@ const fetch = require('node-fetch');
  // ... app code here
  
  const expressApp = express2().use(bodyParser.json())
- // let demoLogger = (req, res, next) => { 
- //   console.error('Intercepting requests ...',req.url);
- //   console.error('Intercepting requests ...',req.query);
- //   console.error('Intercepting body ...',req.body);
- //   console.error('Intercepting header ...',req.headers);
- //   next();  // call next() here to move on to next middleware/router  
- // };
- // expressApp.use(demoLogger);
+
  
  expressApp.all('/*', function(req, res, next) {
    console.error('Intercepting requests ...',req.url);
@@ -493,34 +519,3 @@ const fetch = require('node-fetch');
  
  expressApp.listen(3000)
  
- /**
-  * Send a REPORT STATE call to the homegraph when data for any device id
-  * has been changed.
-  */
- // exports.reportstate = functions.database.ref('{deviceId}').onWrite(
- //     async (change, context) => {
- //       functions.logger.info('Firebase write event triggered Report State');
- //       const snapshot = change.after.val();
- 
- //       const requestBody = {
- //         requestId: 'ff36a3cc', /* Any unique ID */
- //         agentUserId: USER_ID,
- //         payload: {
- //           devices: {
- //             states: {
- //               /* Report the current state of our washer */
- //               [context.params.deviceId]: {
- //                 on: snapshot.OnOff.on,
- //                 isPaused: snapshot.StartStop.isPaused,
- //                 isRunning: snapshot.StartStop.isRunning,
- //               },
- //             },
- //           },
- //         },
- //       };
- 
- //       const res = await homegraph.devices.reportStateAndNotification({
- //         requestBody,
- //       });
- //       functions.logger.info('Report state response:', res.status, res.data);
- //     });
