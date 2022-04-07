@@ -1,4 +1,4 @@
-import {authProvider } from './auth-provider.js';
+import './auth-provider.js';
 
-authProvider.start();
+import './fulfillment';
 
