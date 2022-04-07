@@ -13,7 +13,7 @@ import http from 'http';
  * @param headers HTTP request headers
  * @return The user id
  */
-export async function getUser(headers: Headers) {
+export async function getUser(headers) {
  
 }
 
@@ -61,7 +61,7 @@ app.all('/fakeauth*', function(request, response) {
   console.log('Intercepting header ...',request.headers);
 
   const responseurl = util.format('%s?code=%s&state=%s',
-  decodeURIComponent(request.query.redirect_uri as string), 'xxxxxx',
+  decodeURIComponent(request.query.redirect_uri ), 'xxxxxx',
   request.query.state);
   console.log(`Set redirect as ${responseurl}`);
   return response.redirect(

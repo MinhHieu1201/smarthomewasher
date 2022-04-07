@@ -1,4 +1,4 @@
-import {authProvider } from './auth-provider.ts';
+import {authProvider } from './auth-provider.js';
 
 authProvider.start();
 
