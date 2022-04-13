@@ -1,11 +1,24 @@
 
 import util from 'util';
 
-import {Headers} from 'actions-on-google';
 import express from 'express';
-import * as functions from 'firebase-functions';
 import fetch  from 'node-fetch';
 import http from 'http';
+// const admin = require('firebase-admin');
+ 
+// const { TuyaContext  } = require('@tuya/tuya-connector-nodejs');
+//  // Initialize Firebase
+//  admin.initializeApp();
+//  //const firebaseRef = admin.database().ref('/');
+//  // Initialize Homegraph
+//  const auth = new google.auth.GoogleAuth({
+//    keyFilename: 'smart-home-key.json',
+//    scopes: ['https://www.googleapis.com/auth/homegraph'],
+//  });
+//  const homegraph = google.homegraph({
+//    version: 'v1',
+//    auth: auth,
+//  });
 /**
  * A function that gets the user id from an access token.
  * Replace this functionality with your own OAuth provider.
@@ -13,9 +26,7 @@ import http from 'http';
  * @param headers HTTP request headers
  * @return The user id
  */
-export async function getUser(headers) {
- 
-}
+
 
 const app = express();
 
@@ -121,9 +132,30 @@ app.all('/faketoken*', function(request, response) {
    });
 });
 
-function start() {
-    var httpServer = http.createServer(app);
-    httpServer.listen(8080);
-}
+ 
+app.all('/requestsync*', async function(request, response) {
+  response.set('Access-Control-Allow-Origin', '*');
+  console.info(`Request SYNC for user ${USER_ID}`);
+  try {
+    const res = await homegraph.devices.requestSync({
+      requestBody: {
+        agentUserId: USER_ID,
+      },
+    });
+    console.info('Request sync response:', res.status, res.data);
+    response.json(res.data);
+  } catch (err) {
+    console.error(err);
+    response.status(500).send(`Error requesting sync: ${err}`);
+  }
+});
 
-export const authProvider = functions.https.onRequest(app);
+app.all('/*', function(req, res, next) {
+  console.error('Intercepting requests ...',req.query);
+  console.error('Intercepting body ...',req.body);
+  console.error('Intercepting header ...',req.headers);
+  next();  // call next() here to move on to next middleware/router
+});
+
+var httpServer = http.createServer(app);
+httpServer.listen(8080);

@@ -432,8 +432,6 @@ async function getDeviceInfo(deviceId) {
 /// console.log(JSON.stringify(xxx, null, 2));
 
 
-
- 
    const executePromises = [];
    const intent = body.inputs[0];
    for (const command of intent.payload.commands) {

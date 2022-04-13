@@ -1,23 +1,21 @@
 import fs from 'fs';
 import path from 'path';
 
-import {
-  smarthome,
-  SmartHomeV1ExecuteResponseCommands,
-  Headers,
-} from 'actions-on-google';
-
-const {smarthome, SmartHomeV1ExecuteResponseCommands} = require('actions-on-google');
+import {smarthome} from 'actions-on-google';
+import './appConsts';
+import './tuya-rest';
  
+ 
+import express2 from 'express';
+import bodyParser from  'body-parser';
 //const { TuyaContext  } =  require('tuya');
-import { google} from ('googleapis');
+import { google} from 'googleapis';
 import crypto from 'crypto';
 import axios from 'axios';
 import qs from 'qs';
 import  util from 'util';
 import admin from 'firebase-admin';
 
-import { TuyaContext  } from '@tuya/tuya-connector-nodejs';
 // Initialize Firebase
 admin.initializeApp();
 //const firebaseRef = admin.database().ref('/');
@@ -31,7 +29,254 @@ const homegraph = google.homegraph({
   auth: auth,
 });
 
-const USER_ID = '123';
+await getToken();
+let USER_ID = 0;
+
+function CheckDevice(element)  {
+  switch(element.typeDevice) {
+    case 'normor': 
+    case 'dimmer':
+    case 'color':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.LIGHT,
+        traits: [
+          GoogleDeviceTraits.Brightness,
+          GoogleDeviceTraits.OnOff,
+         GoogleDeviceTraits.ColorSetting
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'ver_curtain':
+    case 'hor_curtain':
+    case 'hor_curtain_right':
+    case 'hor_curtain_left':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.CURTAIN,
+        traits: [
+          GoogleDeviceTraits.OpenClose
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'desk_fan':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.FAN,
+        traits: [
+          GoogleDeviceTraits.FanSpeed,
+          GoogleDeviceTraits.OnOff
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'nebulizer':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.HUMIDIFIER,
+        traits: [
+          GoogleDeviceTraits.FanSpeed,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.StartStop,
+          GoogleDeviceTraits.HumiditySetting
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'air_purifier':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.AIRPURIFIER,
+        traits: [
+          GoogleDeviceTraits.FanSpeed,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.SensorState
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'normor_condition':
+    case 'cassette_condition':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.AIRCOOLER,
+        traits: [
+          GoogleDeviceTraits.FanSpeed,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.TemperatureSetting,
+          GoogleDeviceTraits.HumiditySetting
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'plant_condition':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.AC_UNIT,
+        traits: [
+          GoogleDeviceTraits.FanSpeed,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.TemperatureSetting
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'tivi':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.TV,
+        traits: [
+          GoogleDeviceTraits.AppSelector,
+          GoogleDeviceTraits.InputSelector,
+          GoogleDeviceTraits.MediaState,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.TransportControl,
+          GoogleDeviceTraits.Volume,
+          GoogleDeviceTraits.Channel
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'motion_sensor':
+    case 'humidity_sensor':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.SENSOR,
+        traits: [
+          GoogleDeviceTraits.SensorState,
+          GoogleDeviceTraits.EnergyStorage
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'water_heater':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.WATERHEATER,
+        traits: [
+          GoogleDeviceTraits.TemperatureControl,
+          GoogleDeviceTraits.EnergyStorage
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    // case 'kitchen_hood':
+    //   return dev = {
+    //     id: element.devId,
+    //     type: 'action.devices.types.' + GoogleDeviceTypes.WATERHEATER,
+    //     traits: [
+    //       GoogleDeviceTraits.TemperatureControl,
+    //       GoogleDeviceTraits.EnergyStorage
+    //     ],
+    //     name: {
+    //       defaultNames: [element.name],
+    //       name: element.name,
+    //       nicknames: [element.name]  
+    //     }  
+    //   };
+    case 'vacuum_cleaner':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.VACUUM,
+        traits: [
+          GoogleDeviceTraits.StartStop,
+          GoogleDeviceTraits.Dock,
+          GoogleDeviceTraits.EnergyStorage,
+          GoogleDeviceTraits.Locator,
+          GoogleDeviceTraits.OnOff,
+          GoogleDeviceTraits.RunCycle,
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'washing_machine':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.WASHER,
+        traits: [
+          GoogleDeviceTraits.StartStop,
+          GoogleDeviceTraits.RunCycle,
+          GoogleDeviceTraits.Modes,
+          GoogleDeviceTraits.Toggles,
+          GoogleDeviceTraits.OnOff
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'fridge':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.REFRIGERATOR,
+        traits: [
+          GoogleDeviceTraits.TemperatureControl
+
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    case 'balcony_door':
+    case 'main_door':
+      return dev = {
+        id: element.devId,
+        type: 'action.devices.types.' + GoogleDeviceTypes.DOOR,
+        traits: [
+          GoogleDeviceTraits.OpenClose,
+          GoogleDeviceTraits.LockUnlock
+
+        ],
+        name: {
+          defaultNames: [element.name],
+          name: element.name,
+          nicknames: [element.name]  
+        }  
+      };
+    default:
+      return null;
+  }
+  
+  
+}
 
 
 async function fect(body, req)
@@ -44,7 +289,7 @@ async function fect(body, req)
     },
    };
  
-   await fetch("https://imax.accesscam.org/api/services/app/UserSmartHome/GetAllDeviceActions", {
+  await fetch("https://imax.accesscam.org/api/services/app/UserSmartHome/GetAllDeviceActions", {
   "headers": {
     "accept": "*/*",
     "accept-language": "vi",
@@ -66,26 +311,15 @@ async function fect(body, req)
     console.log("Fetch Onsync =======================",res);
     if(res.result.success && res.result.data !== null ) {
       res.result.data.forEach(element => {
-        var dev = {
-          id: element.devId,
-          type: 'action.devices.types.LIGHT',
-          traits: [
-            'action.devices.traits.Brightness',
-            'action.devices.traits.OnOff',
-            'action.devices.traits.ColorSetting'
-          ],
-          name: {
-            defaultNames: [element.name],
-            name: element.name,
-            nicknames: [element.name]  
-          }  
-        };
-        a.payload.devices.push(dev);
-        console.log("Device deva =======================",dev, a);
+        var dev = CheckDevice(element);
+        if(dev != null) {
+          a.payload.devices.push(dev);
+        }
+      
       });
       }
      });
-    console.log("Device Rest=======================",a, JSON.stringify(a));
+    console.log("Device Rest=======================", a, JSON.stringify(a));
     return a;
  }
  
@@ -181,101 +415,7 @@ async function fect(body, req)
    // return ref.update(state)
    //     .then(() => state);
    return state;
- };
-
- 
-const tuya = new TuyaContext({
-  baseUrl: 'https://openapi.tuyaus.com',
-  accessKey: 'e4jy8n7vbgyaed6egzyz',
-  secretKey: '69e41276e66649d1b2a8a42df3e7ced3',
-});
-
-const device =  tuya.device.detail({
-  device_id: '4720106698f4abbc86b4'
-});
-
-let token = '';
-
-const httpClient = axios.create({
-  baseURL: 'https://openapi.tuyaus.com',
-  timeout: 5 * 1e3,
-});
-
-async function encryptStr(str, secret) {
-  return crypto.createHmac('sha256', secret).update(str, 'utf8').digest('hex').toUpperCase();
-}
-
- async function getToken() {
-  const method = 'GET';
-  const timestamp = Date.now().toString();
-  const signUrl = '/v1.0/token?grant_type=1';
-  const contentHash = crypto.createHash('sha256').update('').digest('hex');
-  const stringToSign = [method, contentHash, '', signUrl].join('\n');
-  const signStr = 'e4jy8n7vbgyaed6egzyz' + timestamp + stringToSign;
-
-  const headers = {
-    t: timestamp,
-    sign_method: 'HMAC-SHA256',
-    client_id: 'e4jy8n7vbgyaed6egzyz',
-    sign: await encryptStr(signStr, '69e41276e66649d1b2a8a42df3e7ced3'),
   };
-  var login = await httpClient.get('/v1.0/token?grant_type=1', { headers });
-  if (!login || !login.success) {
-    // throw Error(`fetch failed: ${login.msg}`);
-  }
-  console.log("Login Tuya =========================", login.data);
-  token = login.data.result.access_token;
-}
-
-async function getRequestSign(
-  path,
-  method,
-  headers = {},
-  query = {},
-  body = {},
-) {
-  const t = Date.now().toString();
-  const [uri, pathQuery] = path.split('?');
-  const queryMerged = Object.assign(query, qs.parse(pathQuery));
-  const sortedQuery = {};
-  Object.keys(queryMerged)
-    .sort()
-    .forEach((i) => (sortedQuery[i] = query[i]));
-
-  const querystring = decodeURIComponent(qs.stringify(sortedQuery));
-  const url = querystring ? `${uri}?${querystring}` : uri;
-  const contentHash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
-  const stringToSign = [method, contentHash, '', url].join('\n');
-  const signStr = 'e4jy8n7vbgyaed6egzyz' + token + t + stringToSign;
-  return {
-    t,
-    path: url,
-    client_id: 'e4jy8n7vbgyaed6egzyz',
-    sign: await encryptStr(signStr, '69e41276e66649d1b2a8a42df3e7ced3'),
-    sign_method: 'HMAC-SHA256',
-    access_token: token,
-  };
-}
-
-
-async function getDeviceInfo(deviceId) {
-  const query = {};
-  const method = 'GET';
-  const url = `/v1.1/iot-03/devices/${deviceId}`;
-  const reqHeaders = await getRequestSign(url, method, {}, query);
-  console.log("Header tuya =========================", reqHeaders);
-  const  data  = await httpClient.request({
-    method,
-    data: {},
-    params: {},
-    headers: reqHeaders,
-    url: reqHeaders.path,
-  });
-
-  console.log("Get device Tuya =========================", data.data);
-  
-}
- 
 
 
  app.onExecute(async (body) => {
@@ -290,14 +430,18 @@ async function getDeviceInfo(deviceId) {
      },
    };
 
-   const xxx = await getToken();
-   var devices = await getDeviceInfo('6cd418b92db0844e00us78');
- 
-/// console.log(JSON.stringify(xxx, null, 2));
+   var comd = {
+    "commands":[
+        {
+            "code":"switch_led",
+            "value":true
+        }
+      
+    ]
+}
 
-
-
- 
+   var devices = await executeDeviceCommands('vdevo164845359620175', comd);
+   
    const executePromises = [];
    const intent = body.inputs[0];
    for (const command of intent.payload.commands) {
@@ -328,43 +472,6 @@ async function getDeviceInfo(deviceId) {
    // Return empty response
    return {};
  });
- 
-
- 
- eapp.all('/requestsync*', async function(request, response) {
-   response.set('Access-Control-Allow-Origin', '*');
-   console.info(`Request SYNC for user ${USER_ID}`);
-   try {
-     const res = await homegraph.devices.requestSync({
-       requestBody: {
-         agentUserId: USER_ID,
-       },
-     });
-     console.info('Request sync response:', res.status, res.data);
-     response.json(res.data);
-   } catch (err) {
-     console.error(err);
-     response.status(500).send(`Error requesting sync: ${err}`);
-   }
- });
- 
- eapp.all('/*', function(req, res, next) {
-   console.error('Intercepting requests ...',req.query);
-   console.error('Intercepting body ...',req.body);
-   console.error('Intercepting header ...',req.headers);
-   next();  // call next() here to move on to next middleware/router
- });
- 
- var httpServer = http.createServer(eapp);
- httpServer.listen(8080);
- 
- 
- 
- 
- const express2 = require('express')
- const bodyParser = require('body-parser')
- 
- // ... app code here
  
  const expressApp = express2().use(bodyParser.json())
 
