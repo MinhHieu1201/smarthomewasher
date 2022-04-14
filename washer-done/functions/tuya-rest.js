@@ -22,8 +22,8 @@ const tuya = new TuyaContext({
   async function encryptStr(str, secret) {
     return crypto.createHmac('sha256', secret).update(str, 'utf8').digest('hex').toUpperCase();
   }
-  
-   async function getToken() {
+
+  export async function getToken() {
     const method = 'GET';
     const timestamp = Date.now().toString();
     const signUrl = '/v1.0/token?grant_type=1';
@@ -45,7 +45,7 @@ const tuya = new TuyaContext({
     token = login.data.result.access_token;
   }
   
-  async function getRequestSign(
+  export async function getRequestSign(
     path,
     method,
     headers = {},
@@ -71,46 +71,66 @@ const tuya = new TuyaContext({
       client_id: 'e4jy8n7vbgyaed6egzyz',
       sign: await encryptStr(signStr, '69e41276e66649d1b2a8a42df3e7ced3'),
       sign_method: 'HMAC-SHA256',
-      access_token: token,
+      access_token: token
     };
   }
   
   
-  async function getDeviceInfo(deviceId) {
+  export async function getDeviceInfo(deviceId) {
     const query = {};
     const method = 'GET';
-    const url = `/v1.1/iot-03/devices/${deviceId}`;
+    const url = `/v1.0/iot-03/devices/${deviceId}/status`;
     const reqHeaders = await getRequestSign(url, method, {}, query);
-    console.log("Header tuya =========================", reqHeaders);
-    const  data  = await httpClient.request({
-      method,
-      data: {},
-      params: {},
-      headers: reqHeaders,
-      url: reqHeaders.path,
+    console.log("Header tuya Info =========================", reqHeaders);
+    // const  data  = await httpClient.request({
+    //   method,
+    //   data: {},
+    //   params: {},
+    //   headers: reqHeaders,
+    //   url: reqHeaders.path
+    // });
+
+    const xxx = await tuya.request({
+      method: 'GET',
+      path: `/v1.0/iot-03/devices/${deviceId}/status`,
+      body: {},
     });
+    
   
-    console.log("Get device Tuya =========================", data.data);
-    return data;
+    console.log("Get device Tuya Info =========================", xxx);
+    return xxx;
     
   }
 
-  async function executeDeviceCommands(deviceId, commands) {
+  export  async function executeDeviceCommands(deviceId, commands) {
     const query = {};
     const method = 'POST';
-    const url = `/v1.0/devices/${deviceId}/commands`;
+    const url = `/v1.0/iot-03/devices/vdevo164845359620175/commands`;
+    var dt = {
+      commands: [
+        {
+          code: "switch_led",
+          value: true
+        }
+      ]
+    }
     const reqHeaders = await getRequestSign(url, method, {}, query);
     console.log("Header tuya =========================", reqHeaders);
-    const  data  = await httpClient.request({
-      method,
-      data: commands,
-      params: {},
-      headers: reqHeaders,
-      url: reqHeaders.path,
+    // const  data  = await httpClient.request({
+    //   method,
+    //   data: dt,
+    //   params: {},
+    //   headers: reqHeaders,
+    //   url: reqHeaders.path
+    // });
+  
+    const pp = await tuya.request({
+      method: 'POST',
+      path: `/v1.0/iot-03/devices/vdevo164845359620175/commands`,
+      body: commands,
     });
+    console.log("Get device Tuya =========================", pp);   
   
-    console.log("Get device Tuya =========================", data.data);
-    
   }
-   
-  
+
+

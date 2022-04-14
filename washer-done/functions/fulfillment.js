@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 import {smarthome} from 'actions-on-google';
-import './appConsts';
-import './tuya-rest';
+import { GoogleCommandExecute, DeviceCommandCodeTuya, GoogleDeviceTraits, GoogleDeviceTypes} from './appConsts.js';
+import {getToken, getDeviceInfo, getRequestSign, executeDeviceCommands} from './tuya-rest.js';
  
  
 import express2 from 'express';
@@ -293,7 +293,8 @@ async function fect(body, req)
   "headers": {
     "accept": "*/*",
     "accept-language": "vi",
-    "authorization": req.authorization,
+    // "authorization": req.authorization,
+    "authorization" : "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJhZG1pbkBhc3BuZXRib2lsZXJwbGF0ZS5jb20iLCJBc3BOZXQuSWRlbnRpdHkuU2VjdXJpdHlTdGFtcCI6IjhhMzUzYjk3LWVjY2EtZTk0NS0xY2U1LTM5ZmY5OTFmNTEwMCIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6WyJBZG1pbiIsIkNpdGl6ZW5NYW5hZ2VyIl0sInN1YiI6IjEiLCJqdGkiOiJlOTk1MDA1NS0wMzAzLTQ5ZDMtODdiZC0wMGZiNWI3MWM5MjAiLCJpYXQiOjE2NDk4NDI5NjUsIm5iZiI6MTY0OTg0Mjk2NSwiZXhwIjoxNjQ5OTI5MzY1LCJpc3MiOiJNSFBRIiwiYXVkIjoiTUhQUSJ9.Ca4yNr_TQYBe7feIA2aj9wlg8k-ZAXsrt09I-bchWC0",
     "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"99\", \"Microsoft Edge\";v=\"99\"",
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": "\"Windows\"",
@@ -327,11 +328,44 @@ async function fect(body, req)
  const app = smarthome();
  
  app.onSync( async (body, req) =>   {
-  console.log('Onsync body==============================', body);
-  console.log('Onsync  reqs==============================', req);
-  var a = await fect(body, req);
-  console.log("return fect =======================",JSON.stringify(a));
-  return a;
+  // console.log('Onsync body==============================', body);
+  // console.log('Onsync  reqs==============================', req);
+  // var a = await fect(body, req);
+  // console.log("return fect =======================",JSON.stringify(a));
+  // return a;
+  return {
+    requestId: body.requestId,
+    payload: {
+      agentUserId: USER_ID,
+      devices: [{
+        id: 'washer',
+        type: 'action.devices.types.WASHER',
+        traits: [
+          'action.devices.traits.OnOff',
+          'action.devices.traits.StartStop',
+          'action.devices.traits.RunCycle',
+        ],
+        name: {
+          defaultNames: ['My Washer'],
+          name: 'Washer',
+          nicknames: ['Washer'],
+        }
+      }, {
+        id: 'light',
+        type: 'action.devices.types.LIGHT',
+        traits: [
+          'action.devices.traits.Brightness',
+          'action.devices.traits.OnOff',
+          'action.devices.traits.ColorSetting'
+        ],
+        name: {
+          defaultNames: [`Smart Lamp`],
+          name: 'Smart Lamp',
+          nicknames: ['abc']         
+        }     
+      }],
+    },
+  };
   });
  
   var storeState = { on: true,
@@ -430,30 +464,33 @@ async function fect(body, req)
      },
    };
 
-   var comd = {
-    "commands":[
-        {
-            "code":"switch_led",
-            "value":true
-        }
-      
+   const comd = {
+    commands: [
     ]
-}
+  }
 
-   var devices = await executeDeviceCommands('vdevo164845359620175', comd);
+  
    
    const executePromises = [];
    const intent = body.inputs[0];
    for (const command of intent.payload.commands) {
      for (const device of command.devices) {
        for (const execution of command.execution) {
-         executePromises.push(
+          switch(execution.command) {
+            case GoogleCommandExecute.OnOff :
+              comd.commands.push({
+                "code": "switch_led",
+                "value": execution.params.on
+              })
+          }
+          var devices = await executeDeviceCommands('vdevo164845359620175',comd);
+          executePromises.push(
              updateDevice(execution, device.id)
-                 .then((data) => {
+                  .then((data) => {
                    result.ids.push(device.id);
                    Object.assign(result.states, data);
-                 })
-                 .catch(() => console.error('EXECUTE', device.id)));
+                  })
+                  .catch(() => console.error('EXECUTE', device.id)));
        }
      }
    }
@@ -485,8 +522,6 @@ async function fect(body, req)
  });
  
  expressApp.post('/fulfillment', app)
- 
- 
  
  expressApp.listen(3000)
  

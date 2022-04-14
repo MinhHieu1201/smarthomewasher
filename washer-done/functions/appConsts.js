@@ -1,4 +1,4 @@
-class GoogleDeviceTypes {
+export class GoogleDeviceTypes {
 
     //Air conditioning units are similar to thermostats, but do not support heating and may not support setting temperature targets.
     // FanSpeed
@@ -617,7 +617,7 @@ class GoogleDeviceTypes {
 }
 
 
-class GoogleDeviceTraits {
+export class GoogleDeviceTraits {
 
     static AppSelector = "action.devices.traits.AppSelector";
 
@@ -661,7 +661,7 @@ class GoogleDeviceTraits {
     static Volume = "action.devices.traits.Volume";
 }
 
-class DeviceCommandCodeTuya {
+export class DeviceCommandCodeTuya {
     static switch_led = 'switch_led';
     static control = 'control';
     static percent_control = 'percent_control';
@@ -673,4 +673,8 @@ class DeviceCommandCodeTuya {
     static colour_data = 'colour_data';
     static scene_data = 'scene_data';
     
+}
+
+export class GoogleCommandExecute {
+    static OnOff = 'action.devices.commands.OnOff';
 }
