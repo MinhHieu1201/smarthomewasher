@@ -37,6 +37,10 @@ function CheckDevice(element) {
     case 'normor':
     case 'dimmer':
     case 'color':
+      let colorModel = "rgb";
+      if(element.equipmentCompany = 'tuya') {
+        colorModel = 'hsv';
+      }
       return dev = {
         id: element.id,
         type: 'action.devices.types.' + GoogleDeviceTypes.LIGHT,
@@ -49,6 +53,9 @@ function CheckDevice(element) {
           defaultNames: [element.name],
           name: element.name,
           nicknames: [element.name]
+        },
+        attributes: {
+          colorModel: colorModel,
         }
       };
     case 'ver_curtain':
@@ -318,8 +325,6 @@ function CheckCommandsExecute(command, homeDevice) {
     default:
       break;
   }
- 
-  
 
 }
 
@@ -443,8 +448,7 @@ app.onSync(async (body, req) => {
         attributes: {
           colorModel: "hsv",
         }
-      }
-        , {
+      }, {
         id: 'curtain',
         type: 'action.devices.types.CURTAIN',
         traits: [
