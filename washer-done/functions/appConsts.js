@@ -677,4 +677,45 @@ export class DeviceCommandCodeTuya {
 
 export class GoogleCommandExecute {
     static OnOff = 'action.devices.commands.OnOff';
+    static BrightnessAbsolute = 'action.devices.commands.BrightnessAbsolute';
+    static StartStop = 'action.devices.commands.StartStop';
+    static RunCycle = 'action.devices.commands.RunCycle';
+    static ColorAbsolute = 'action.devices.commands.ColorAbsolute';
+    static PauseUnpause = 'action.devices.commands.PauseUnpause';
+    static SetFanSpeed = 'action.devices.commands.SetFanSpeed';
+    static ThermostatTemperatureSetpoint = 'action.devices.commands.ThermostatTemperatureSetpoint';
+    static ThermostatSetMode = 'action.devices.commands.ThermostatSetMode';
+    static SetHumidity = 'action.devices.commands.SetHumidity';
+    static SetToggles = 'action.devices.commands.SetToggles';
+    static SetModes = 'action.devices.commands.SetModes';
+    static SensorState = 'action.devices.commands.SensorState';
+    static AppInstall = 'action.devices.commands.appInstall';
+    static AppSearch = 'action.devices.commands.appSearch';
+    static AppSelect = 'action.devices.commands.appSelect';
+    static SetInput = 'action.devices.commands.setInput';
+    static MediaClosedCaptioningOff = 'action.devices.commands.mediaClosedCaptioningOff';
+    static MediaClosedCaptioningOn = 'action.devices.commands.mediaClosedCaptioningOn';
+    static MediaNext = 'action.devices.commands.mediaNext';
+    static MediaPause = 'action.devices.commands.mediaPause';
+    static MediaPrevious = 'action.devices.commands.mediaPrevious';
+    static MediaResume = 'action.devices.commands.mediaResume';
+    static MediaStop = 'action.devices.commands.mediaStop';
+    static Mute = 'action.devices.commands.mute';
+    static SetVolume = 'action.devices.commands.setVolume';
+    static RelativeChannel = 'action.devices.commands.relativeChannel';
+    static ReturnChannel = 'action.devices.commands.returnChannel';
+    static PreviousInput = 'action.devices.commands.PreviousInput';
+    static NextInput = 'action.devices.commands.NextInput';
+    static Dock = 'action.devices.commands.Dock';
+    static SetTemperature = 'action.devices.commands.SetTemperature';
+    static LockUnlock = 'action.devices.commands.LockUnlock';
+    static Cook = 'action.devices.commands.Cook';
+    static TimerStart = 'action.devices.commands.TimerStart';
+    static TimerAdjust = 'action.devices.commands.TimerAdjust';
+    static TimerPause = 'action.devices.commands.TimerPause';
+    static TimerResume = 'action.devices.commands.TimerResume';
+    static TimerCancel = 'action.devices.commands.TimerCancel';
+
+    //sence
+    static ActivateScene = 'action.devices.commands.ActivateScene';
 }
