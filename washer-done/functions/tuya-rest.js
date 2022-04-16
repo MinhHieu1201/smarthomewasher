@@ -106,16 +106,9 @@ const tuya = new TuyaContext({
     const query = {};
     const method = 'POST';
     const url = `/v1.0/iot-03/devices/vdevo164845359620175/commands`;
-    var dt = {
-      commands: [
-        {
-          code: "switch_led",
-          value: true
-        }
-      ]
-    }
+
     const reqHeaders = await getRequestSign(url, method, {}, query);
-    console.log("Header tuya =========================", reqHeaders);
+    console.log("Command Execute Tuya =========================", JSON.stringify(commands));
     // const  data  = await httpClient.request({
     //   method,
     //   data: dt,
@@ -129,7 +122,7 @@ const tuya = new TuyaContext({
       path: `/v1.0/iot-03/devices/vdevo164845359620175/commands`,
       body: commands,
     });
-    console.log("Get device Tuya =========================", pp);   
+    console.log("Execute command =========================", pp);   
   
   }
 

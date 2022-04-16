@@ -24,6 +24,7 @@ const auth = new google.auth.GoogleAuth({
   keyFilename: 'smart-home-key.json',
   scopes: ['https://www.googleapis.com/auth/homegraph'],
 });
+
 const homegraph = google.homegraph({
   version: 'v1',
   auth: auth,
@@ -285,41 +286,52 @@ function CheckDevice(element) {
 
 }
 
-function CheckCommandsExecute(command, homeDevice) {
+async function CheckCommandsExecute(command, homeDevice) {
   const comd = {
     commands: [
+     
     ]
   };
+
+  console.log('Command ======================', command)
 
   switch(homeDevice.equipmentCompany) {
     case 'tuya':
       for (const execution of command.execution) {
+        console.log('Excutecomamnd ============ ', execution)
         switch (execution.command) {
           case GoogleCommandExecute.OnOff:
             comd.commands.push({
               "code": "switch_led",
               "value": execution.params.on
-            })
-          case GoogleCommandExecute.BrightnessAbsolute:
+            });
+            break
+          case 'action.devices.commands.BrightnessAbsolute':
             comd.commands.push({
               "code": "bright_value",
               "value" : execution.params.color.brightness
-            })
+            });
+            break
           case GoogleCommandExecute.ColorAbsolute:
             comd.commands.push({
               "code": "colour_data",
               "value": {
                 "h": execution.params.color.spectrumHSV.hue,
-                "s": execution.params.color.spectrumHSV.saturation,
-                "v": execution.params.color.spectrumHSV.value
+                "s": execution.params.color.spectrumHSV.saturation * 255,
+                "v": execution.params.color.spectrumHSV.value * 255
               }
-            })
+            });
+            break
         }
       }
     
-      // if (comd.commands.length > 0) {
-      //   var devices = await executeDeviceCommands('vdevo164845359620175', comd);
-      // }
+      if (comd.commands.length > 0) {
+        // comd.commands.push( {
+        //   "code": "bright_value",
+        //   "value" : 200
+        // });
+        var devices = await executeDeviceCommands('vdevo164845359620175', comd);
+      }
     case 'knx':
       break;
     default:
@@ -436,9 +448,10 @@ app.onSync(async (body, req) => {
         id: 'light',
         type: 'action.devices.types.LIGHT',
         traits: [
-          GoogleDeviceTraits.ColorSetting,
-          GoogleDeviceTraits.OnOff,
-          GoogleDeviceTraits.Brightness
+          'action.devices.traits.OnOff',
+          'action.devices.traits.ColorSetting',
+          'action.devices.traits.Brightness', 
+
         ],
         name: {
           defaultNames: [`Smart Lamp`],
@@ -446,7 +459,8 @@ app.onSync(async (body, req) => {
           nicknames: ['abc']
         },
         attributes: {
-          colorModel: "hsv",
+          
+          colorModel: "hsv"
         }
       }, {
         id: 'curtain',
@@ -455,11 +469,26 @@ app.onSync(async (body, req) => {
           GoogleDeviceTraits.OpenClose,
         ],
         name: {
-          defaultNames: [`Smart Lamp`],
-          name: 'Smart Lamp',
+          defaultNames: [`curtain`],
+          name: 'curtain',
           nicknames: ['curtain']
         }
-      }],
+      },{
+        id: 'light2',
+        type: 'action.devices.types.LIGHT',
+        traits: [
+          'action.devices.traits.OnOff',
+          'action.devices.traits.ColorSetting',
+          'action.devices.traits.Brightness', 
+
+        ],
+        name: {
+          defaultNames: [`test`],
+          name: 'test',
+          nicknames: ['test']
+        }
+      }
+    ],
     },
   };
 });
@@ -567,28 +596,29 @@ app.onExecute(async (body, req) => {
   const intent = body.inputs[0];
   for (const command of intent.payload.commands) {
     for (const device of command.devices) {
-      // var homeDV = await GetDeviceInfoMHPQ(req, device.id);
-      // if (homeDV != null) {
-      //  // CheckCommandsExecute(command, homeDV);
-      //   for (const execution of command.execution) {
-      //     executePromises.push(
-      //       updateDevice(execution, device.id)
-      //         .then((data) => {
-      //           result.ids.push(device.id);
-      //           Object.assign(result.states, data);
-      //         })
-      //         .catch(() => console.error('EXECUTE', device.id)));
-      //   }
-      // }
-      for (const execution of command.execution) {
-        executePromises.push(
-          updateDevice(execution, device.id)
-            .then((data) => {
-              result.ids.push(device.id);
-              Object.assign(result.states, data);
-            })
-            .catch(() => console.error('EXECUTE', device.id)));
+     // var homeDV = await GetDeviceInfoMHPQ(req, device.id);
+     var homeDV = { equipmentCompany : 'tuya'}
+      if (homeDV != null) {
+        CheckCommandsExecute(command, homeDV);
+        for (const execution of command.execution) {
+          executePromises.push(
+            updateDevice(execution, device.id)
+              .then((data) => {
+                result.ids.push(device.id);
+                Object.assign(result.states, data);
+              })
+              .catch(() => console.error('EXECUTE', device.id)));
+        }
       }
+      // for (const execution of command.execution) {
+      //   executePromises.push(
+      //     updateDevice(execution, device.id)
+      //       .then((data) => {
+      //         result.ids.push(device.id);
+      //         Object.assign(result.states, data);
+      //       })
+      //       .catch(() => console.error('EXECUTE', device.id)));
+      // }
 
     }
   }
