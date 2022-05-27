@@ -3,11 +3,16 @@ import util from 'util';
 
 import express from 'express';
 import fetch  from 'node-fetch';
-import http from 'http';
+import http from 'https';
+import fs from 'fs';
 import admin from 'firebase-admin';
 import {google} from 'googleapis';
- // Initialize Firebase
 
+ // Initialize Firebase
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
 
 
  // Initialize Firebase
@@ -235,5 +240,10 @@ app.all('/*', function(req, res, next) {
   next();  // call next() here to move on to next middleware/router
 });
 
-var httpServer = http.createServer(app);
+var httpServer = http.createServer(options,app);
 httpServer.listen(8080);
+
+// https.createServer(options, function (req, res) {
+//   res.writeHead(200);
+//   res.end("hello world\n");
+// }).listen(8000);

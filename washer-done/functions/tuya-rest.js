@@ -42,7 +42,7 @@ const tuya = new TuyaContext({
       // throw Error(`fetch failed: ${login.msg}`);
     }
     console.log("Login Tuya =========================", login.data);
-    token = login.data.result.access_token;
+    token = login.data.result?.access_token;
   }
   
   export async function getRequestSign(

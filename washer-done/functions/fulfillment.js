@@ -1,11 +1,12 @@
-import fs from 'fs';
+
 import path from 'path';
 
 import { smarthome } from 'actions-on-google';
 import { GoogleCommandExecute, DeviceCommandCodeTuya, GoogleDeviceTraits, GoogleDeviceTypes } from './appConsts.js';
 import { getToken, getDeviceInfo, getRequestSign, executeDeviceCommands } from './tuya-rest.js';
 
-
+import https from 'https';
+import fs from 'fs';
 import express2 from 'express';
 import bodyParser from 'body-parser';
 //const { TuyaContext  } =  require('tuya');
@@ -16,6 +17,11 @@ import qs from 'qs';
 import util from 'util';
 import admin from 'firebase-admin';
 
+
+const options = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
 // Initialize Firebase
 admin.initializeApp();
 //const firebaseRef = admin.database().ref('/');
@@ -619,7 +625,6 @@ app.onExecute(async (body, req) => {
       //       })
       //       .catch(() => console.error('EXECUTE', device.id)));
       // }
-
     }
   }
 
@@ -650,6 +655,8 @@ expressApp.all('/*', function (req, res, next) {
 });
 
 expressApp.post('/fulfillment', app)
+var httpServer = https.createServer(options,expressApp);
+httpServer.listen(3001);
 
-expressApp.listen(3000)
+//expressApp.listen(3001)
 

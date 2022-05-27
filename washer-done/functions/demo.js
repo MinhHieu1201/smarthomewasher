@@ -36,7 +36,7 @@
  // Hardcoded user ID
  const USER_ID = '123';
  
- var http = require('http');
+ var http = require('https');
  var express = require('express');
  var eapp = express();
  eapp.use(express.json())
@@ -428,7 +428,7 @@
  
  
  
- expressApp.listen(3000)
+ expressApp.listen(3001)
  
  /**
   * Send a REPORT STATE call to the homegraph when data for any device id

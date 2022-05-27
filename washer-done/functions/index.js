@@ -44,7 +44,7 @@ const { TuyaContext  } = require('@tuya/tuya-connector-nodejs');
  // Hardcoded user ID
  const USER_ID = '123';
  
- var http = require('http');
+ var http = require('https');
  var express = require('express');
  var eapp = express();
  eapp.use(express.json())
@@ -515,5 +515,5 @@ async function getDeviceInfo(deviceId) {
  
  
  
- expressApp.listen(3000)
+ expressApp.listen(3001)
  
